@@ -9,6 +9,8 @@ local UI        = require "src/ui"
 local Game      = require "src/game"
 
 function love.load()
+    -- bump up the window size for more breathing room
+    love.window.setMode(0, 0, {resizable = true, fullscreen = false})
     math.randomseed(os.time())
     Game:init()
 end

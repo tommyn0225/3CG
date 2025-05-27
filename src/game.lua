@@ -19,7 +19,7 @@ function Game:init()
 
     -- load card images
     for _, def in ipairs(constants.CARD_DEFS) do
-        def.image = love.graphics.newImage("assets/images/"..def.id..".png")
+        def.image = love.graphics.newImage("src/assets/images/"..def.id..".png")
     end
 
     -- deal starting hands & initial mana

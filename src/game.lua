@@ -39,9 +39,16 @@ end
 
 function Game:nextPhase()
     if self.state == "staging" then
-        -- AI stages its play
+        -- lock in player's cards (face down)
+        for loc, slots in ipairs(self.board.slots[1]) do
+            for _, c in ipairs(slots) do c.faceUp = false end
+        end
+        -- AI stages its play (cards face down)
         self.state = "enemy"
         AI.stageRandom(self.players[2], self.board)
+        for loc, slots in ipairs(self.board.slots[2]) do
+            for _, c in ipairs(slots) do c.faceUp = false end
+        end
 
     elseif self.state == "enemy" then
         -- Reveal all cards
@@ -49,6 +56,7 @@ function Game:nextPhase()
         for pid = 1, 2 do
             for loc = 1, 3 do
                 for _, c in ipairs(self.board.slots[pid][loc]) do
+                    c.faceUp = true
                     c:applyTrigger("onReveal", self)
                 end
             end

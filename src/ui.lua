@@ -37,9 +37,27 @@ function UI:mousepressed(x, y, button)
         for i, card in ipairs(p.hand) do
             local cx = hx + (i - 1) * (CARD_W + GAP)
             if x >= cx and x <= cx + CARD_W and y >= hy and y <= hy + CARD_H then
-                self.dragging = { card = card, originIndex = i }
+                self.dragging = { type = "hand", card = card, originIndex = i }
                 table.remove(p.hand, i)
                 return
+            end
+        end
+        -- pick up from board during staging
+        local laneY   = h * 0.15
+        local laneH   = h * 0.55
+        for loc, slots in ipairs(Game.board.slots[1]) do
+            local laneX      = laneGap + (loc - 1) * (laneW + laneGap)
+            local totalLaneW = Game.board.maxSlots * CARD_W + (Game.board.maxSlots - 1) * GAP
+            local startX     = laneX + (laneW - totalLaneW) / 2
+            local rowY       = laneY + laneH - CARD_H
+            for slotIndex, c in ipairs(slots) do
+                if c and x >= startX + (slotIndex - 1) * (CARD_W + GAP) 
+                   and x <= startX + (slotIndex - 1) * (CARD_W + GAP) + CARD_W 
+                   and y >= rowY and y <= rowY + CARD_H then
+                    self.dragging = { type = "board", card = c, origin = { loc = loc, slot = slotIndex } }
+                    table.remove(slots, slotIndex)
+                    return
+                end
             end
         end
     end
@@ -62,15 +80,23 @@ end
 function UI:mousereleased(x, y, button)
     if not self.dragging then return end
     local p  = Game.players[1]
-    local c  = self.dragging.card
+    local d  = self.dragging
+    local c  = d.card
     local w, h = lg.getWidth(), lg.getHeight()
 
+    -- if not staging, return card to origin
     if Game.state ~= "staging" then
-        table.insert(p.hand, self.dragging.originIndex, c)
+        if d.type == "hand" then
+            table.insert(p.hand, d.originIndex, c)
+        elseif d.type == "board" then
+            local ori = d.origin
+            table.insert(Game.board.slots[1][ori.loc], ori.slot, c)
+        end
         self.dragging = nil
         return
     end
 
+    -- staging drop logic
     local laneGap = w * 0.02
     local GAP     = laneGap
     local laneW   = (w - 4 * laneGap) / 3
@@ -87,7 +113,15 @@ function UI:mousereleased(x, y, button)
         for slot = 1, Game.board.maxSlots do
             local sx = startX + (slot - 1) * (CARD_W + GAP)
             if x >= sx and x <= sx + CARD_W and y >= slotY and y <= slotY + CARD_H then
-                if p:playCard(c, loc, Game.board) then
+                if d.type == "hand" then
+                    -- normal play from hand
+                    if p:playCard(c, loc, Game.board) then
+                        self.dragging = nil
+                        return
+                    end
+                elseif d.type == "board" then
+                    -- free reposition
+                    table.insert(Game.board.slots[1][loc], slot, c)
                     self.dragging = nil
                     return
                 end
@@ -95,7 +129,13 @@ function UI:mousereleased(x, y, button)
         end
     end
 
-    table.insert(p.hand, self.dragging.originIndex, c)
+    -- revert on invalid drop
+    if d.type == "hand" then
+        table.insert(p.hand, d.originIndex, c)
+    elseif d.type == "board" then
+        local ori = d.origin
+        table.insert(Game.board.slots[1][ori.loc], ori.slot, c)
+    end
     self.dragging = nil
 end
 
@@ -150,27 +190,39 @@ function UI:draw()
     end
     lg.setColor(1,1,1)
     for pid=1,2 do
-        local rowY=(pid==1) and(laneY+laneH-CARD_H) or laneY
         for loc=1,3 do
-            local laneX=laneGap+(loc-1)*(laneW+laneGap)
-            local totalLaneW=Game.board.maxSlots*CARD_W+(Game.board.maxSlots-1)*GAP
-            local startX=laneX+(laneW-totalLaneW)/2
+            local rowY
+            if pid==1 then
+                rowY = laneY+laneH-CARD_H
+            else
+                rowY = laneY
+            end
             for slot=1,Game.board.maxSlots do
-                local sx=startX+(slot-1)*(CARD_W+GAP)
-                lg.setColor(1,1,1);lg.rectangle('line',sx,rowY,CARD_W,CARD_H)
-                local c=Game.board.slots[pid][loc][slot]
-                if c and c.faceUp then
-                    lg.setColor(0.1,0.1,0.1)
-                    lg.rectangle('fill',sx+2,rowY+2,CARD_W-4,CARD_H-4)
-                    lg.setColor(1,1,1)
-                    lg.printf(c.def.name,sx,rowY+8,CARD_W,'center')
-                    local img=c.def.image
-                    local iw,ih=img:getDimensions()
-                    local scale=math.min((CARD_W*0.6)/iw,(CARD_H*0.45)/ih)
-                    lg.draw(img,sx+(CARD_W-iw*scale)/2,rowY+40,0,scale,scale)
-                    lg.print("C:"..c.cost,sx+10,rowY+CARD_H-90)
-                    lg.print("P:"..c.power,sx+CARD_W-40,rowY+CARD_H-90)
-                    lg.printf(c.def.text,sx+10,rowY+CARD_H-70,CARD_W-20,'center')
+                local startX = laneGap + (loc-1)*(laneW+laneGap)
+                local totalLaneW = Game.board.maxSlots*CARD_W+(Game.board.maxSlots-1)*GAP
+                local laneStart = startX + (laneW-totalLaneW)/2
+                local sx = laneStart+(slot-1)*(CARD_W+GAP)
+                lg.setColor(1,1,1); lg.rectangle('line',sx,rowY,CARD_W,CARD_H)
+                local c = Game.board.slots[pid][loc][slot]
+                if c then
+                    -- determine visibility
+                    if c.faceUp then
+                        lg.setColor(0.1,0.1,0.1)
+                        lg.rectangle('fill',sx+2,rowY+2,CARD_W-4,CARD_H-4)
+                        lg.setColor(1,1,1)
+                        lg.printf(c.def.name,sx,rowY+8,CARD_W,'center')
+                        local img=c.def.image
+                        local iw,ih=img:getDimensions()
+                        local scale=math.min((CARD_W*0.6)/iw,(CARD_H*0.45)/ih)
+                        lg.draw(img,sx+(CARD_W-iw*scale)/2,rowY+40,0,scale,scale)
+                        lg.print("C:"..c.cost,sx+10,rowY+CARD_H-90)
+                        lg.print("P:"..c.power,sx+CARD_W-40,rowY+CARD_H-90)
+                        lg.printf(c.def.text,sx+10,rowY+CARD_H-70,CARD_W-20,'center')
+                    else
+                        -- face down placeholder
+                        lg.setColor(0.2,0.2,0.2)
+                        lg.rectangle('fill',sx,rowY,CARD_W,CARD_H)
+                    end
                 end
             end
         end
@@ -183,7 +235,7 @@ function UI:draw()
     local hy=laneY+laneH+laneGap
     for i,c in ipairs(p1.hand) do
         local sx=hx+(i-1)*(CARD_W+GAP)
-        lg.setColor(1,1,1);lg.rectangle('line',sx,hy,CARD_W,CARD_H)
+        lg.setColor(1,1,1); lg.rectangle('line',sx,hy,CARD_W,CARD_H)
         lg.printf(c.def.name,sx,hy+8,CARD_W,'center')
         local img=c.def.image
         local iw,ih=img:getDimensions()
@@ -210,7 +262,7 @@ function UI:draw()
     local sby = hy + (CARD_H - bh)/2
     lg.setColor(0.85,0.85,0.85)
     lg.rectangle('fill',sbx,sby,bw,bh,6,6)
-    lg.setColor(0,0,0);lg.printf("Next",sbx,sby+(bh-18)/2,bw,'center')
+    lg.setColor(0,0,0); lg.printf("Next",sbx,sby+(bh-18)/2,bw,'center')
 
     -- Mana & Scores
     lg.setColor(1,1,1)
@@ -231,7 +283,7 @@ function UI:draw()
     if Game.state=="gameover" then
         lg.setColor(0,0,0,0.7)
         lg.rectangle('fill',0,0,w,h)
-        lg.setColor(1,0,0);lg.printf("Game Over",0,h/2-30,w,'center')
+        lg.setColor(1,0,0); lg.printf("Game Over",0,h/2-30,w,'center')
     end
 end
 

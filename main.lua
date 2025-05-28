@@ -10,7 +10,7 @@ local Game      = require "src/game"
 
 function love.load()
     -- lock window size to 1920x1080
-    love.window.setMode(1920, 1080, {resizable = false, fullscreen = false})
+    love.window.setMode(1680, 1050, {resizable = false, fullscreen = false})
     love.window.setTitle("Mythic Clash")
 
     -- initialize game

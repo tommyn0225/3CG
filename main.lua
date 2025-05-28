@@ -9,7 +9,11 @@ local UI        = require "src/ui"
 local Game      = require "src/game"
 
 function love.load()
-    love.window.setMode(0, 0, {resizable = true, fullscreen = false})
+    -- lock window size to 1920x1080
+    love.window.setMode(1920, 1080, {resizable = false, fullscreen = false})
+    love.window.setTitle("Mythic Clash")
+
+    -- initialize game
     math.randomseed(os.time())
     Game:init()
     Game.state = "menu"

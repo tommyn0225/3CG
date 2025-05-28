@@ -40,6 +40,7 @@ function UI:mousepressed(x, y, button)
                 return
             end
         end
+
         -- board pickup
         local laneY, laneH = h * 0.15, h * 0.55
         for loc, slots in ipairs(Game.board.slots[1]) do
@@ -50,7 +51,7 @@ function UI:mousepressed(x, y, button)
             for slotIndex, c in ipairs(slots) do
                 local sx = startX + (slotIndex - 1) * (CARD_W + GAP)
                 if x >= sx and x <= sx + CARD_W and y >= rowY and y <= rowY + CARD_H then
-                    self.dragging = { type = "board", card = c, origin = { loc = loc, slot = slotIndex } }
+                    self.dragging = { type = "board", card = c, origin = { loc = loc, slotIndex = slotIndex } }
                     table.remove(slots, slotIndex)
                     return
                 end
@@ -92,8 +93,7 @@ function UI:mousereleased(x, y, button)
         if d.type == "hand" then
             table.insert(p.hand, d.originIndex, c)
         elseif d.type == "board" then
-            local ori = d.origin
-            table.insert(Game.board.slots[1][ori.loc], ori.slot, c)
+            table.insert(Game.board.slots[1][d.origin.loc], c)
         end
         self.dragging = nil
         return
@@ -127,7 +127,7 @@ function UI:mousereleased(x, y, button)
                         return
                     end
                 elseif d.type == "board" then
-                    table.insert(Game.board.slots[1][loc], slot, c)
+                    table.insert(Game.board.slots[1][loc], c)
                     c.faceUp = true
                     self.dragging = nil
                     return
@@ -140,8 +140,7 @@ function UI:mousereleased(x, y, button)
     if d.type == "hand" then
         table.insert(p.hand, d.originIndex, c)
     elseif d.type == "board" then
-        local ori = d.origin
-        table.insert(Game.board.slots[1][ori.loc], ori.slot, c)
+        table.insert(Game.board.slots[1][d.origin.loc], c)
     end
     self.dragging = nil
 end

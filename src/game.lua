@@ -39,18 +39,50 @@ end
 
 function Game:nextPhase()
     if self.state == "staging" then
+        -- Flip all cards face down before AI turn
+        for pid = 1, 2 do
+            for loc = 1, 3 do
+                for _, c in ipairs(self.board.slots[pid][loc]) do
+                    c:flip(false)
+                end
+            end
+        end
+        
         -- AI stages its play
         self.state = "enemy"
         AI.stageRandom(self.players[2], self.board)
 
     elseif self.state == "enemy" then
-        -- Reveal all cards
+        -- Reveal all cards, winner first per location
         self.state = "reveal"
-        for pid = 1, 2 do
-            for loc = 1, 3 do
-                for _, c in ipairs(self.board.slots[pid][loc]) do
-                    c:applyTrigger("onReveal", self)
+        for loc = 1, 3 do
+            local p1Power = self.board:totalPower(1, loc)
+            local p2Power = self.board:totalPower(2, loc)
+            local winner, loser
+            if p1Power > p2Power then
+                winner, loser = 1, 2
+            elseif p2Power > p1Power then
+                winner, loser = 2, 1
+            else
+                if math.random() < 0.5 then
+                    winner, loser = 1, 2
+                else
+                    winner, loser = 2, 1
                 end
+            end
+            -- First, flip all cards face up for both players
+            for pid = 1, 2 do
+                for _, c in ipairs(self.board.slots[pid][loc]) do
+                    c:flip(true)
+                end
+            end
+            -- Winner triggers abilities first
+            for _, c in ipairs(self.board.slots[winner][loc]) do
+                c:applyTrigger("onReveal", self, {location=loc})
+            end
+            -- Then loser
+            for _, c in ipairs(self.board.slots[loser][loc]) do
+                c:applyTrigger("onReveal", self, {location=loc})
             end
         end
 
@@ -73,6 +105,20 @@ function Game:nextPhase()
         end
 
     elseif self.state == "scoring" then
+        -- Handle end of turn effects
+        for pid = 1, 2 do
+            for loc = 1, 3 do
+                for i = #self.board.slots[pid][loc], 1, -1 do
+                    local card = self.board.slots[pid][loc][i]
+                    if card.def.id == "helios" then
+                        -- Discard Helios
+                        self.players[pid].deck:discard(card)
+                        table.remove(self.board.slots[pid][loc], i)
+                    end
+                end
+            end
+        end
+
         -- Cleanup: discard all cards, prepare next turn
         for _, p in ipairs(self.players) do
             for loc = 1, 3 do
@@ -86,7 +132,9 @@ function Game:nextPhase()
 
         self.turn = self.turn + 1
         for _, p in ipairs(self.players) do
-            p.mana = self.turn
+            -- Apply Apollo's mana bonus
+            p.mana = self.turn + (p.nextTurnMana or 0)
+            p.nextTurnMana = 0
         end
 
         -- Check win
@@ -98,6 +146,7 @@ function Game:nextPhase()
         end
 
         self.state = "staging"
+        require("src/ui").discardedThisTurn = false
     end
 end
 

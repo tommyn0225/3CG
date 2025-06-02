@@ -10,95 +10,18 @@ local MAX_HAND = 7
 UI.discardedThisTurn = false
 UI.showEnemyHandDebug = false
 
--- Button definitions
-local function getToggleButton()
-    local w = lg.getWidth()
-    return {
-        x = w - 140, y = 60, w = 120, h = 32,
-        label = UI.showEnemyHandDebug and "Hide Enemy Hand" or "Show Enemy Hand"
-    }
-end
-local function getNextButton()
-    local w, h = lg.getWidth(), lg.getHeight()
-    local laneGap = w * 0.02
-    local GAP = laneGap
-    local laneW = (w - 4 * laneGap) / 3
-    local CARD_W = (laneW - (Game.board.maxSlots - 1) * GAP) / Game.board.maxSlots
-    local CARD_H = h * 0.2
-    local totalW = MAX_HAND * CARD_W + (MAX_HAND - 1) * GAP
-    local hx = (w - totalW) / 2
-    local hy = h * 0.15 + h * 0.55 + laneGap
-    local bw = CARD_W * 0.8
-    local bh = CARD_H * 0.5
-    local nbx = hx + totalW + GAP
-    local nby = hy + (CARD_H - bh) / 2
-    return {x=nbx, y=nby, w=bw, h=bh}
-end
-
-local function drawButton(btn)
-    lg.setColor(0.7,0.7,0.7)
-    lg.rectangle('fill', btn.x, btn.y, btn.w, btn.h, 8, 8)
-    lg.setColor(0,0,0)
-    lg.printf(btn.label or "", btn.x, btn.y + 8, btn.w, 'center')
-end
-
-local function drawHand(p, y, isPlayer)
-    local w = lg.getWidth()
-    local laneGap = w * 0.02
-    local GAP = laneGap
-    local laneW = (w - 4 * laneGap) / 3
-    local CARD_W = (laneW - (Game.board.maxSlots - 1) * GAP) / Game.board.maxSlots
-    local CARD_H = lg.getHeight() * 0.2
-    local totalW = #p.hand * CARD_W + (#p.hand - 1) * GAP
-    local hx = (w - totalW) / 2
-    for i, c in ipairs(p.hand) do
-        local sx = hx + (i - 1) * (CARD_W + GAP)
-        lg.setColor(1,1,1); lg.rectangle('line', sx, y, CARD_W, CARD_H)
-        lg.printf(c.def.name, sx, y + 8, CARD_W, 'center')
-        local img = c.def.image
-        local iw, ih = img:getDimensions()
-        local scale = math.min((CARD_W * 0.6) / iw, (CARD_H * 0.45) / ih)
-        lg.draw(img, sx + (CARD_W - iw * scale) / 2, y + 40, 0, scale, scale)
-        lg.print("C:"..c.cost, sx + 10, y + CARD_H - 90)
-        if isPlayer and Game.state == "reveal" and c.powerSetThisReveal then
-            lg.setColor(0.2,0.6,1)
-        else
-            lg.setColor(1,1,1)
-        end
-        lg.print("P:"..c.power, sx + CARD_W - 40, y + CARD_H - 90)
-        lg.setColor(1,1,1)
-        lg.printf(c.def.text, sx + 10, y + CARD_H - 70, CARD_W - 20, 'center')
-    end
-end
-
-local function drawEnemyHand()
-    if not UI.showEnemyHandDebug then return end
-    local w, h = lg.getWidth(), lg.getHeight()
-    local laneGap = w * 0.02
-    local GAP = laneGap
-    local laneW = (w - 4 * laneGap) / 3
-    local CARD_W = (laneW - (Game.board.maxSlots - 1) * GAP) / Game.board.maxSlots
-    local CARD_H = h * 0.2
-    local p2 = #Game.players[2].hand > 0 and Game.players[2] or nil
-    if p2 then
-        local smallW, smallH = CARD_W * 0.4, CARD_H * 0.4
-        local eh = #p2.hand
-        local totalEW = eh * smallW + (eh - 1) * (GAP * 0.5)
-        local ex = (w - totalEW) / 2
-        for i, c in ipairs(p2.hand) do
-            local sx = ex + (i - 1) * (smallW + GAP * 0.5)
-            lg.setColor(0.2,0.2,0.2); lg.rectangle('fill', sx, GAP, smallW, smallH)
-            lg.setColor(1,1,1); lg.printf(c.def.name, sx, GAP + 4, smallW, 'center')
-            lg.print("C:"..c.cost, sx + 2, GAP + smallH - 32)
-            lg.print("P:"..c.power, sx + 2, GAP + smallH - 16)
-        end
-    end
-end
-
 function UI:mousepressed(x, y, button)
-    local w, h = lg.getWidth(), lg.getHeight()
-    local btn = getToggleButton()
-    if x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+    local w, h    = lg.getWidth(), lg.getHeight()
+    local laneGap = w * 0.02
+    local GAP     = laneGap
+    local laneW   = (w - 4 * laneGap) / 3
+    local CARD_W  = (laneW - (Game.board.maxSlots - 1) * GAP) / Game.board.maxSlots
+    local CARD_H  = h * 0.2
+
+    -- Toggle button
+    local btnW, btnH = 120, 32
+    local btnX, btnY = w - btnW - 20, 60
+    if x >= btnX and x <= btnX + btnW and y >= btnY and y <= btnY + btnH then
         UI.showEnemyHandDebug = not UI.showEnemyHandDebug
         return
     end
@@ -300,7 +223,13 @@ end
 
 function UI:draw()
     local w, h = lg.getWidth(), lg.getHeight()
-    drawButton(getToggleButton())
+    local laneGap = w * 0.02
+    local GAP = laneGap
+    local laneW = (w - 4 * laneGap) / 3
+    local CARD_W = (laneW - (Game.board.maxSlots - 1) * GAP) / Game.board.maxSlots
+    local CARD_H = h * 0.2
+    local laneY = h * 0.15
+    local laneH = h * 0.55
 
     -- Title
     if Game.state == "menu" then
@@ -318,6 +247,15 @@ function UI:draw()
     local phase = "Round "..Game.turn..": "..Game:getPhaseText()
     local fw = lg.getFont():getWidth(phase)
     lg.print(phase, w-fw-20,20)
+
+    -- Draw toggle button (top right corner)
+    local btnW, btnH = 120, 32
+    local btnX, btnY = w - btnW - 20, 60
+    lg.setColor(0.7,0.7,0.7)
+    lg.rectangle('fill', btnX, btnY, btnW, btnH, 8, 8)
+    lg.setColor(0,0,0)
+    local label = UI.showEnemyHandDebug and "Hide Enemy Hand" or "Show Enemy Hand"
+    lg.printf(label, btnX, btnY + 8, btnW, 'center')
 
     -- Draw board lanes & cards
     local laneColors={{0.6,0.2,0.2,0.35},{0.2,0.6,0.2,0.35},{0.2,0.2,0.6,0.35}}
@@ -431,16 +369,38 @@ function UI:draw()
     end
 
     -- Draw player hand & piles
-    drawHand(Game.players[1], laneY + laneH + laneGap, true)
+    local p1=Game.players[1]
+    local totalW=#p1.hand*CARD_W+(#p1.hand-1)*GAP
+    local hx=(w-totalW)/2
+    local hy=laneY+laneH+laneGap
+    for i,c in ipairs(p1.hand) do
+        local sx=hx+(i-1)*(CARD_W+GAP)
+        lg.setColor(1,1,1);lg.rectangle('line',sx,hy,CARD_W,CARD_H)
+        lg.printf(c.def.name,sx,hy+8,CARD_W,'center')
+        local img=c.def.image
+        local iw,ih=img:getDimensions()
+        local scale=math.min((CARD_W*0.6)/iw,(CARD_H*0.45)/ih)
+        lg.draw(img,sx+(CARD_W-iw*scale)/2,hy+40,0,scale,scale)
+        lg.print("C:"..c.cost,sx+10,hy+CARD_H-90)
+        -- Draw power, blue if set by ability this reveal
+        if Game.state == "reveal" and c.powerSetThisReveal then
+            lg.setColor(0.2,0.6,1) -- Blue
+        else
+            lg.setColor(1,1,1)
+        end
+        lg.print("P:"..c.power,sx+CARD_W-40,hy+CARD_H-90)
+        lg.setColor(1,1,1)
+        lg.printf(c.def.text,sx+10,hy+CARD_H-70,CARD_W-20,'center')
+    end
 
     local pileW,pileH=CARD_W*0.8,CARD_H*0.8
     lg.setColor(0.3,0.3,0.3)
     lg.rectangle('line',laneGap,hy,pileW,pileH)
-    lg.printf(#Game.players[1].deck.cards,laneGap,hy+pileH+5,pileW,'center')
+    lg.printf(#p1.deck.cards,laneGap,hy+pileH+5,pileW,'center')
     lg.printf('Deck',laneGap,hy-20,pileW,'center')
     local dx=w-laneGap-pileW
     lg.rectangle('line',dx,hy,pileW,pileH)
-    lg.printf(#Game.players[1].deck.discardPile,dx,hy+pileH+5,pileW,'center')
+    lg.printf(#p1.deck.discardPile,dx,hy+pileH+5,pileW,'center')
     lg.printf('Discard',dx,hy-20,pileW,'center')
 
     -- Next button (fixed)
@@ -453,8 +413,8 @@ function UI:draw()
 
     -- Mana & Scores
     lg.setColor(1,1,1)
-    lg.print("Mana: "..Game.players[1].mana,20,20)
-    lg.print("Score: "..Game.players[1].score,20,60)
+    lg.print("Mana: "..p1.mana,20,20)
+    lg.print("Score: "..p1.score,20,60)
     lg.print("Enemy Score: "..Game.players[2].score,20,100)
 
     -- Drag preview scaled
@@ -482,7 +442,24 @@ function UI:draw()
         lg.printf("New Game",bx,by+(bh-24)/2,bw,'center')
     end
 
-    drawEnemyHand()
+    -- Only show enemy hand details if debug flag is true
+    if UI.showEnemyHandDebug then
+        -- Debug enemy hand (small+cost+power)
+        local p2=#Game.players[2].hand>0 and Game.players[2] or nil
+        if p2 then
+            local smallW, smallH = CARD_W*0.4, CARD_H*0.4
+            local eh=#p2.hand
+            local totalEW=eh*smallW+(eh-1)*(GAP*0.5)
+            local ex=(w-totalEW)/2
+            for i,c in ipairs(p2.hand) do
+                local sx=ex+(i-1)*(smallW+GAP*0.5)
+                lg.setColor(0.2,0.2,0.2); lg.rectangle('fill',sx,GAP,smallW,smallH)
+                lg.setColor(1,1,1); lg.printf(c.def.name,sx,GAP+4,smallW,'center')
+                lg.print("C:"..c.cost,sx+2,GAP+smallH-32)
+                lg.print("P:"..c.power,sx+2,GAP+smallH-16)
+            end
+        end
+    end
 end
 
 return UI

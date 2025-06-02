@@ -5,8 +5,10 @@ UI.__index = UI
 local Game = require "src/game"
 local lg   = love.graphics
 
+-- Maximum hand slots (for positioning Next button)
 local MAX_HAND = 7
 
+-- Add at the top of the file, after UI.__index = UI
 UI.discardedThisTurn = false
 UI.showEnemyHandDebug = false
 
@@ -18,7 +20,7 @@ function UI:mousepressed(x, y, button)
     local CARD_W  = (laneW - (Game.board.maxSlots - 1) * GAP) / Game.board.maxSlots
     local CARD_H  = h * 0.2
 
-    -- Toggle button
+    -- Toggle button area (top right corner)
     local btnW, btnH = 120, 32
     local btnX, btnY = w - btnW - 20, 60
     if x >= btnX and x <= btnX + btnW and y >= btnY and y <= btnY + btnH then

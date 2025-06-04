@@ -35,6 +35,17 @@ end
 function Card:addPower(amount)
     self.power = self.power + amount
     self.powerChange = self.powerChange + amount
+    
+    -- Log power change
+    if amount ~= 0 then
+        local game = require("src/game")
+        local changeText = amount > 0 and "+" .. amount or amount
+        game.gameLog:addEntry(string.format("%s's %s power changed by %s (now %d)", 
+            self.ownerId == 1 and "Player" or "Enemy",
+            self.def.name,
+            changeText,
+            self.power))
+    end
 end
 
 function Card:addMana(amount)
@@ -43,13 +54,34 @@ function Card:addMana(amount)
         if player then
             player.mana = player.mana + amount
             self.manaChange = self.manaChange + amount
+            
+            -- Log mana change
+            if amount ~= 0 then
+                local game = require("src/game")
+                local changeText = amount > 0 and "+" .. amount or amount
+                game.gameLog:addEntry(string.format("%s's mana changed by %s (now %d)", 
+                    self.ownerId == 1 and "Player" or "Enemy",
+                    changeText,
+                    player.mana))
+            end
         end
     end
 end
 
 function Card:setPower(newPower)
+    local oldPower = self.power
     self.power = newPower
     self.powerSetThisReveal = true
+    
+    -- Log power change
+    if oldPower ~= newPower then
+        local game = require("src/game")
+        game.gameLog:addEntry(string.format("%s's %s power set to %d (was %d)", 
+            self.ownerId == 1 and "Player" or "Enemy",
+            self.def.name,
+            newPower,
+            oldPower))
+    end
 end
 
 return Card

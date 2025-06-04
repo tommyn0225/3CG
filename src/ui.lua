@@ -20,6 +20,45 @@ function UI:mousepressed(x, y, button)
     local CARD_W  = (laneW - (Game.board.maxSlots - 1) * GAP) / Game.board.maxSlots
     local CARD_H  = h * 0.2
 
+    -- Game log interaction
+    local panelW = 300
+    local panelH = Game.gameLog.isCollapsed and 30 or 250
+    local panelX = 20
+    local panelY = h - panelH - 20  -- Position at bottom left
+    
+    -- Check if clicking on collapse/expand button
+    local btnW, btnH = 20, 20
+    local btnX = panelX + panelW - btnW - 5
+    local btnY = panelY + 5
+    if x >= btnX and x <= btnX + btnW and y >= btnY and y <= btnY + btnH then
+        Game.gameLog:toggleCollapse()
+        return
+    end
+    
+    -- Check if clicking on scroll indicators
+    if not Game.gameLog.isCollapsed then
+        local scrollBtnW, scrollBtnH = 20, 20
+        local scrollBtnX = panelX + panelW - scrollBtnW - 5
+        
+        -- Up arrow
+        local upBtnY = panelY + 30
+        if x >= scrollBtnX and x <= scrollBtnX + scrollBtnW and 
+           y >= upBtnY and y <= upBtnY + scrollBtnH and 
+           Game.gameLog.scrollOffset > 0 then
+            Game.gameLog:scroll(1)  -- Scroll up
+            return
+        end
+        
+        -- Down arrow
+        local downBtnY = panelY + panelH - scrollBtnH - 5
+        if x >= scrollBtnX and x <= scrollBtnX + scrollBtnW and 
+           y >= downBtnY and y <= downBtnY + scrollBtnH and 
+           Game.gameLog.scrollOffset < Game.gameLog.maxScrollOffset then
+            Game.gameLog:scroll(-1)  -- Scroll down
+            return
+        end
+    end
+
     -- Toggle button area (top right corner)
     local btnW, btnH = 120, 32
     local btnX, btnY = w - btnW - 20, 60

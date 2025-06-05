@@ -5,10 +5,8 @@ UI.__index = UI
 local Game = require "src/game"
 local lg   = love.graphics
 
--- Maximum hand slots (for positioning Next button)
 local MAX_HAND = 7
 
--- Add at the top of the file, after UI.__index = UI
 UI.discardedThisTurn = false
 UI.showEnemyHandDebug = false
 
@@ -24,9 +22,9 @@ function UI:mousepressed(x, y, button)
     local panelW = 300
     local panelH = Game.gameLog.isCollapsed and 30 or 250
     local panelX = 20
-    local panelY = h - panelH - 20  -- Position at bottom left
+    local panelY = h - panelH - 20
     
-    -- Check if clicking on collapse/expand button
+    -- Check if clicking on collapse button
     local btnW, btnH = 20, 20
     local btnX = panelX + panelW - btnW - 5
     local btnY = panelY + 5
@@ -45,7 +43,7 @@ function UI:mousepressed(x, y, button)
         if x >= scrollBtnX and x <= scrollBtnX + scrollBtnW and 
            y >= upBtnY and y <= upBtnY + scrollBtnH and 
            Game.gameLog.scrollOffset > 0 then
-            Game.gameLog:scroll(1)  -- Scroll up
+            Game.gameLog:scroll(1)
             return
         end
         
@@ -54,12 +52,11 @@ function UI:mousepressed(x, y, button)
         if x >= scrollBtnX and x <= scrollBtnX + scrollBtnW and 
            y >= downBtnY and y <= downBtnY + scrollBtnH and 
            Game.gameLog.scrollOffset < Game.gameLog.maxScrollOffset then
-            Game.gameLog:scroll(-1)  -- Scroll down
+            Game.gameLog:scroll(-1)
             return
         end
     end
 
-    -- Toggle button area (top right corner)
     local btnW, btnH = 120, 32
     local btnX, btnY = w - btnW - 20, 60
     if x >= btnX and x <= btnX + btnW and y >= btnY and y <= btnY + btnH then
@@ -67,7 +64,6 @@ function UI:mousepressed(x, y, button)
         return
     end
 
-    -- Title screen click
     if Game.state == "menu" then
         local bw, bh = w * 0.3, h * 0.1
         local bx, by = (w - bw) / 2, h * 0.5
@@ -78,7 +74,6 @@ function UI:mousepressed(x, y, button)
         return
     end
 
-    -- Game Over screen click
     if Game.state == "gameover" then
         local bw, bh = w*0.3, h*0.1
         local bx, by = (w-bw)/2, h/2+20
@@ -129,7 +124,7 @@ function UI:mousepressed(x, y, button)
         end
     end
 
-    -- Next button click (fixed to max hand layout)
+    -- Next button click
     do
         local totalW = MAX_HAND * CARD_W + (MAX_HAND - 1) * GAP
         local hx = (w - totalW) / 2
@@ -230,7 +225,6 @@ function UI:mousereleased(x, y, button)
                     local oldLoc = self.dragging.originLoc
                     local oldSlot = self.dragging.originIndex
                     
-                    -- Don't do anything if dropping in the same slot
                     if oldLoc == loc and oldSlot == slot then
                         self.dragging = nil
                         return
@@ -238,7 +232,7 @@ function UI:mousereleased(x, y, button)
                     
                     -- Check if target slot is empty
                     if not Game.board.slots[1][loc][slot] then
-                        -- Check if we have enough mana to play the card
+                        -- Check if enough mana
                         if p:canPlay(c) then
                             -- Remove from old position
                             table.remove(Game.board.slots[1][oldLoc], oldSlot)
@@ -255,7 +249,6 @@ function UI:mousereleased(x, y, button)
         end
     end
 
-    -- If we get here, the drop was invalid
     if self.dragging.fromHand then
         table.insert(p.hand, self.dragging.originIndex, c)
     end
@@ -289,7 +282,7 @@ function UI:draw()
     local fw = lg.getFont():getWidth(phase)
     lg.print(phase, w-fw-20,20)
 
-    -- Draw toggle button (top right corner)
+    -- Draw toggle button
     local btnW, btnH = 120, 32
     local btnX, btnY = w - btnW - 20, 60
     lg.setColor(0.7,0.7,0.7)
@@ -314,11 +307,10 @@ function UI:draw()
                 local diffText = tostring(powerDiff)
                 if powerDiff > 0 then
                     diffText = "+" .. diffText
-                    lg.setColor(0,1,0)  -- Green for positive
+                    lg.setColor(0,1,0) -- Green
                 else
-                    lg.setColor(1,0,0)  -- Red for negative
+                    lg.setColor(1,0,0)  -- Red
                 end
-                -- Use a moderate font size
                 local fontSize = 16
                 local oldFont = lg.getFont()
                 local tempFont = love.graphics.newFont(fontSize)
@@ -366,10 +358,10 @@ function UI:draw()
                             local changeText = ""
                             if c.powerChange > 0 then
                                 changeText = "+" .. c.powerChange .. "P"
-                                lg.setColor(0,1,0)  -- Green for positive
+                                lg.setColor(0,1,0)  -- Green
                             elseif c.powerChange < 0 then
                                 changeText = c.powerChange .. "P"
-                                lg.setColor(1,0,0)  -- Red for negative
+                                lg.setColor(1,0,0)  -- Red
                             end
                             if changeText ~= "" then
                                 lg.printf(changeText, sx, rowY+CARD_H-110, CARD_W, 'center')
@@ -381,17 +373,17 @@ function UI:draw()
                             local changeText = ""
                             if c.manaChange > 0 then
                                 changeText = "+" .. c.manaChange .. "M"
-                                lg.setColor(0,1,0)  -- Green for positive
+                                lg.setColor(0,1,0)  -- Green
                             elseif c.manaChange < 0 then
                                 changeText = c.manaChange .. "M"
-                                lg.setColor(1,0,0)  -- Red for negative
+                                lg.setColor(1,0,0)  -- Red
                             end
                             if changeText ~= "" then
                                 lg.printf(changeText, sx, rowY+CARD_H-130, CARD_W, 'center')
                             end
                         end
                     else
-                        -- Draw face-down card
+                        -- Draw face down card
                         lg.setColor(0.2,0.2,0.2)
                         lg.rectangle('fill',sx+2,rowY+2,CARD_W-4,CARD_H-4)
                         lg.setColor(0.4,0.4,0.4)
@@ -444,7 +436,7 @@ function UI:draw()
     lg.printf(#p1.deck.discardPile,dx,hy+pileH+5,pileW,'center')
     lg.printf('Discard',dx,hy-20,pileW,'center')
 
-    -- Next button (fixed)
+    -- Next button
     local bw, bh = CARD_W*0.8, CARD_H*0.5
     local sbx = (w - (MAX_HAND*CARD_W + (MAX_HAND-1)*GAP))/2 + (MAX_HAND*CARD_W + GAP*(MAX_HAND))
     local sby = hy + (CARD_H - bh)/2
@@ -485,7 +477,7 @@ function UI:draw()
 
     -- Only show enemy hand details if debug flag is true
     if UI.showEnemyHandDebug then
-        -- Debug enemy hand (small+cost+power)
+        -- Show enemy hand (for debugging)
         local p2=#Game.players[2].hand>0 and Game.players[2] or nil
         if p2 then
             local smallW, smallH = CARD_W*0.4, CARD_H*0.4

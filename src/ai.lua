@@ -7,7 +7,7 @@ function AI.stageRandom(player, board)
     while available do
         available = false
         local choices = {}
-        -- gather all cards the AI can afford and has space for
+        -- Gather all cards the AI can afford and has space for
         for _, c in ipairs(player.hand) do
             if player:canPlay(c) then
                 for loc = 1, 3 do
@@ -20,16 +20,16 @@ function AI.stageRandom(player, board)
         end
         if #choices > 0 then
             available = true
-            -- pick one at random
+            -- Pick one at random
             local card = choices[math.random(#choices)]
-            -- remove it from hand
+            -- Remove it from hand
             for i, hc in ipairs(player.hand) do
                 if hc == card then
                     table.remove(player.hand, i)
                     break
                 end
             end
-            -- choose a random valid lane
+            -- Choose a random valid lane
             local valid = {}
             for loc = 1, 3 do
                 if #board.slots[player.id][loc] < board.maxSlots then

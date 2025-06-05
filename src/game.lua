@@ -16,12 +16,12 @@ function Game:init()
     self.targetScore = constants.TARGET_SCORE
     self.gameLog     = GameLog.new()
 
-    -- preload all card images
+    -- Preload all card images
     for _, def in ipairs(constants.CARD_DEFS) do
         def.image = love.graphics.newImage("src/assets/images/" .. def.id .. ".png")
     end
 
-    -- deal starting hands, set initial mana
+    -- Deal starting hands, set initial mana
     for _, p in ipairs(self.players) do
         p:drawStartingHand()
         p.mana = self.turn
@@ -79,7 +79,7 @@ function Game:nextPhase()
             self.gameLog:addEntry(string.format("Location %d: %s reveals first (Power: %d vs %d)", 
                 loc, winner == 1 and "Player" or "Enemy", p1Power, p2Power))
             
-            -- First, flip all cards face up for both players
+            -- Flip all cards face up for both players
             for pid = 1, 2 do
                 for _, c in ipairs(self.board.slots[pid][loc]) do
                     c:flip(true)
@@ -145,7 +145,7 @@ function Game:nextPhase()
             end
         end
 
-        -- Cleanup: discard all cards, prepare next turn
+        -- Discard all cards, prepare next turn
         for _, p in ipairs(self.players) do
             for loc = 1, 3 do
                 for _, c in ipairs(self.board.slots[p.id][loc]) do
@@ -188,7 +188,6 @@ function Game:nextPhase()
 end
 
 function Game:update(dt)
-    -- no per-frame logic for now
 end
 
 function Game:draw()

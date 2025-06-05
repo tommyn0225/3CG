@@ -11,9 +11,9 @@ function Card.new(def)
     self.cost = def.cost
     self.faceUp = false
     self.ownerId = nil
-    self.powerChange = 0  -- Track power changes
-    self.manaChange = 0   -- Track mana changes
-    self.powerSetThisReveal = false -- Track if power was set by an ability this reveal
+    self.powerChange = 0
+    self.manaChange = 0 
+    self.powerSetThisReveal = false
     return self
 end
 

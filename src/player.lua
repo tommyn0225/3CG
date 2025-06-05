@@ -12,7 +12,7 @@ function Player.new(id, isAI)
     self.hand  = {}
     self.mana  = 0
     self.score = 0
-    self.nextTurnMana = 0  -- For Apollo's ability
+    self.nextTurnMana = 0
     return self
 end
 
@@ -38,8 +38,8 @@ function Player:playCard(card, locIdx, board)
     if self:canPlay(card) and #board.slots[self.id][locIdx] < board.maxSlots then
         self.mana = self.mana - card.cost
         card.ownerId = self.id  -- Set owner ID when playing
-        -- Only flip face up if it's the player's turn (id 1)
-        card:flip(self.id == 1)  -- Flip face up only during player's turn
+        -- Only flip face up for player turn
+        card:flip(self.id == 1)
         board:placeCard(self.id, locIdx, card)
         return true
     end
@@ -105,11 +105,11 @@ function Player:stageRandom(board)
         if #choices > 0 then
             available = true
             local card = choices[math.random(#choices)]
-            -- remove from hand
+            -- Remove from hand
             for i,c in ipairs(self.hand) do
                 if c == card then table.remove(self.hand, i); break end
             end
-            -- pick a random valid location
+            -- Pick a random valid location
             local locs = {}
             for loc=1,3 do
                 if #board.slots[self.id][loc] < board.maxSlots then

@@ -18,6 +18,15 @@ constants.CARD_DEFS = {
     { id="nyx",        name="Hades",        cost=7, power=3, text="When Revealed: Gain +2 power for each card in your discard pile.", ability="hades" },
     { id="daedalus",   name="Daedalus",   cost=5, power=3, text="When Revealed: Add a Wooden Cow to each other location.", ability="daedalus" },
     { id="helios",     name="Ares",     cost=6, power=4,text="When Revealed: Gain +2 power for each enemy card here.", ability="ares" },
+    -- new cards
+    { id="demeter",    name="Demeter",     cost=3, power=2, text="When Revealed: Both players draw a card.", ability="demeter"},
+    { id="ship_of_theseus",    name="Ship of Theseus",     cost=6, power=4, text="When Revealed: Add a copy with +1 power to your hand.", ability="ship_of_theseus"},
+    { id="sword_of_damocles",    name="Sword of Damocles",     cost=5, power=5, text="End of Turn: Loses 1 power if not winning this location.", ability="sword_of_damocles"},
+    { id="persephone",    name="Persephone",     cost=2, power=1, text="When Revealed: Discard the lowest power card in your hand.", ability="persephone"},
+    { id="dionysus",    name="Dionysus",     cost=6, power=3, text="When Revealed: Gain +2 power for each of your other cards here.", ability="dionysus"},
+
+    
+
 }
 
 return constants

@@ -129,4 +129,90 @@ function abilities.ares(game, sourcePlayer, targetPlayer, sourceCard, context)
     end
 end
 
+-- Demeter: Both players draw a card
+function abilities.demeter(game, sourcePlayer, targetPlayer, sourceCard, context)
+    -- Draw for source player
+    if #sourcePlayer.hand < 7 and #sourcePlayer.deck.cards > 0 then
+        local card = sourcePlayer.deck:drawOne()
+        card.ownerId = sourcePlayer.id
+        table.insert(sourcePlayer.hand, card)
+    end
+    -- Draw for target player
+    if #targetPlayer.hand < 7 and #targetPlayer.deck.cards > 0 then
+        local card = targetPlayer.deck:drawOne()
+        card.ownerId = targetPlayer.id
+        table.insert(targetPlayer.hand, card)
+    end
+end
+
+-- Ship of Theseus: Add a copy with +1 power to your hand
+function abilities.ship_of_theseus(game, sourcePlayer, targetPlayer, sourceCard, context)
+    if #sourcePlayer.hand < 7 then
+        local Card = require "src/card"
+        local newCard = Card.new(sourceCard.def)
+        newCard.ownerId = sourcePlayer.id
+        newCard:addPower(1)  -- Add +1 power to the copy
+        table.insert(sourcePlayer.hand, newCard)
+    end
+end
+
+-- Sword of Damocles: Loses 1 power if not winning this location
+function abilities.sword_of_damocles(game, sourcePlayer, targetPlayer, sourceCard, context)
+    local loc = context.location
+    local sourcePower = game.board:totalPower(sourcePlayer.id, loc)
+    local targetPower = game.board:totalPower(targetPlayer.id, loc)
+    
+    if sourcePower <= targetPower then
+        if sourceCard.addPower then
+            sourceCard:addPower(-1)
+        else
+            sourceCard.power = sourceCard.power - 1
+        end
+    end
+end
+
+-- Persephone: Discard the lowest power card in your hand
+function abilities.persephone(game, sourcePlayer, targetPlayer, sourceCard, context)
+    if #sourcePlayer.hand > 0 then
+        local lowestCard = nil
+        local lowestPower = math.huge
+        local lowestIndex = nil
+        
+        -- Find the lowest power card
+        for i, card in ipairs(sourcePlayer.hand) do
+            if card.power < lowestPower then
+                lowestPower = card.power
+                lowestCard = card
+                lowestIndex = i
+            end
+        end
+        
+        -- Discard the lowest power card
+        if lowestCard then
+            table.remove(sourcePlayer.hand, lowestIndex)
+            sourcePlayer.deck:discard(lowestCard)
+        end
+    end
+end
+
+-- Dionysus: Gain +2 power for each of your other cards here
+function abilities.dionysus(game, sourcePlayer, targetPlayer, sourceCard, context)
+    local loc = context.location
+    local otherCards = 0
+    
+    -- Count other cards at the same location
+    for _, card in ipairs(game.board.slots[sourcePlayer.id][loc]) do
+        if card ~= sourceCard then
+            otherCards = otherCards + 1
+        end
+    end
+    
+    local gain = 2 * otherCards
+    if sourceCard.addPower then
+        sourceCard:addPower(gain)
+    else
+        sourceCard.power = sourceCard.power + gain
+    end
+end
+
 return abilities 
